@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Porsche Executive Dashboard</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+:root{
+    --bg:#0a0a0a;
+    --card:#141414;
+    --border:#252525;
+    --text:#ffffff;
+    --muted:#8b8b8b;
+    --accent:#b12b2b;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:"Helvetica Neue",Arial,sans-serif;
+}
+
+body{
+    background:var(--bg);
+    color:var(--text);
+}
+
+header{
+    height:90px;
+    background:#000;
+    border-bottom:1px solid var(--border);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 50px;
+}
+
+.logo{
+    font-size:34px;
+    letter-spacing:6px;
+    font-weight:200;
+}
+
+.logo span{
+    color:var(--accent);
+}
+
+.header-right{
+    color:var(--muted);
+    font-size:12px;
+    letter-spacing:2px;
+}
+
+.container{
+    padding:30px 40px;
+}
+
+.filters{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:18px;
+    margin-bottom:30px;
+}
+
+.filter{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:14px;
+}
+
+.filter label{
+    display:block;
+    margin-bottom:10px;
+    color:var(--muted);
+    font-size:11px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+}
+
+.filter select,
+.filter input{
+    width:100%;
+    padding:12px;
+    background:#0f0f0f;
+    color:#fff;
+    border:none;
+    border-radius:10px;
+}
+
+.cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:20px;
+    margin-bottom:30px;
+}
+
+.card{
+    background:linear-gradient(145deg,#111,#1b1b1b);
+    border:1px solid var(--border);
+    border-radius:22px;
+    padding:24px;
+}
+
+.card-title{
+    color:var(--muted);
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    margin-bottom:12px;
+}
+
+.card-value{
+    font-size:30px;
+    line-height:1.4;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:24px;
+}
+
+.chart-box{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:24px;
+    padding:24px;
+}
+
+.chart-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    margin-bottom:18px;
+}
+
+.chart-title{
+    font-size:18px;
+    font-weight:300;
+}
+
+.insight{
+    width:260px;
+    text-align:right;
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.7;
+}
+
+.chart-wrapper{
+    position:relative;
+    height:260px;
+}
+
+.large{
+    grid-column:1/-1;
+}
+
+.large .chart-wrapper{
+    height:340px;
+}
+
+footer{
+    text-align:center;
+    color:#666;
+    font-size:12px;
+    padding:35px;
+}
+
+@media(max-width:1000px){
+
+    .grid{
+        grid-template-columns:1fr;
+    }
+
+    .chart-header{
+        flex-direction:column;
+        gap:15px;
+    }
+
+    .insight{
+        width:100%;
+        text-align:left;
+    }
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+    <div class="logo">
+        PORSCHE <span>ANALYTICS</span>
+    </div>
+
+    <div class="header-right">
+        EXECUTIVE SALES DASHBOARD
+    </div>
+
+</header>
+
+<div class="container">
+
+    <!-- FILTROS -->
+    <div class="filters">
+
+        <div class="filter">
+            <label>Modelo</label>
+            <select id="modelFilter">
+                <option value="All">Todos</option>
+            </select>
+        </div>
+
+        <div class="filter">
+            <label>Estado</label>
+            <select id="stateFilter">
+                <option value="All">Todos</option>
+            </select>
+        </div>
+
+        <div class="filter">
+            <label>Cidade</label>
+            <select id="cityFilter">
+                <option value="All">Todas</option>
+            </select>
+        </div>
+
+        <div class="filter">
+            <label>Ano do Modelo</label>
+            <select id="yearFilter">
+                <option value="All">Todos</option>
+            </select>
+        </div>
+
+        <div class="filter">
+            <label>Status</label>
+            <select id="statusFilter">
+                <option value="All">Todos</option>
+            </select>
+        </div>
+
+        <div class="filter">
+            <label>Data Inicial</label>
+            <input type="date" id="startDate">
+        </div>
+
+        <div class="filter">
+            <label>Data Final</label>
+            <input type="date" id="endDate">
+        </div>
+
+    </div>
+
+    <!-- CARDS -->
+    <div class="cards">
+
+        <div class="card">
+            <div class="card-title">
+                Veículo Mais Caro
+            </div>
+
+            <div class="card-value" id="mostExpensive">
+                -
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                Veículo Mais Barato
+            </div>
+
+            <div class="card-value" id="cheapest">
+                -
+            </div>
+        </div>
+
+    </div>
+
+    <!-- GRÁFICOS -->
+    <div class="grid">
+
+        <div class="chart-box">
+
+            <div class="chart-header">
+
+                <div class="chart-title">
+                    Valor Total de Venda por Modelo
+                </div>
+
+                <div class="insight" id="modelInsight"></div>
+
+            </div>
+
+            <div class="chart-wrapper">
+                <canvas id="modelChart"></canvas>
+            </div>
+
+        </div>
+
+        <div class="chart-box">
+
+            <div class="chart-header">
+
+                <div class="chart-title">
+                    Valor de Venda por Estado
+                </div>
+
+                <div class="insight" id="stateInsight"></div>
+
+            </div>
+
+            <div class="chart-wrapper">
+                <canvas id="stateChart"></canvas>
+            </div>
+
+        </div>
+
+        <div class="chart-box">
+
+            <div class="chart-header">
+
+                <div class="chart-title">
+                    Tipo de Pagamento Mais Frequente
+                </div>
+
+                <div class="insight" id="paymentInsight"></div>
+
+            </div>
+
+            <div class="chart-wrapper">
+                <canvas id="paymentChart"></canvas>
+            </div>
+
+        </div>
+
+        <div class="chart-box">
+
+            <div class="chart-header">
+
+                <div class="chart-title">
+                    Status de Entrega
+                </div>
+
+                <div class="insight" id="statusInsight"></div>
+
+            </div>
+
+            <div class="chart-wrapper">
+                <canvas id="statusChart"></canvas>
+            </div>
+
+        </div>
+
+        <div class="chart-box large">
+
+            <div class="chart-header">
+
+                <div class="chart-title">
+                    Evolução das Vendas por Mês/Ano
+                </div>
+
+                <div class="insight" id="timeInsight"></div>
+
+            </div>
+
+            <div class="chart-wrapper">
+                <canvas id="timeChart"></canvas>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<footer>
+    Porsche Luxury Performance Analytics
+</footer>
+
+<script>
+
+/*
+========================================================
+BASE DE DADOS
+========================================================
+*/
+
+const rawSalesData = `
+7|14/03/2024|911 Turbo S|2024|235000,00|Wire Transfer|Seattle|WA|Delivered
+8|18/04/2024|Cayenne Coupe|2023|112750,00|Financing|Austin|TX|In Transit
+10|22/05/2024|Taycan 4S|2024|121000,00|Bank Transfer|Los Angeles|CA|Delivered
+11|06/08/2024|Panamera 4|2023|104500,00|Credit Card|Miami|FL|Cancelled
+12|11/07/2024|911 Carrera S|2020|96300,00|Leasing|New York|NY|Delivered
+13|15/07/2024|Cayenne E-Hybrid|2022|89750,00|Bank Transfer|San Diego|CA|Pending Approval
+14|19/08/2024|718 Boxster|2021|73500,00|Debit Card|Chicago|IL|Shipped
+15|02/09/2024|Macan GTS|2024|95000,00|Financing|Phoenix|AZ|In Transit
+16|17/09/2024|Taycan Turbo|2023|153200,50|ACH Payment|Dallas|TX|Delivered
+18|11/05/2024|Panamera Turbo S|2022|132000,00|Cash|San Jose|CA|Delivered
+19|12/12/2024|Cayenne Turbo GT|2024|188000,00|Crypto|Houston|TX|Awaiting Delivery
+20|25/12/2024|911 Carrera Cabriolet|2023|127800,00|Credit Card|Atlanta|GA|Delivered
+21|06/01/2025|Macan|2021|58900,00|Bank Transfer|Orlando|FL|Pending
+23|14/02/2025|Taycan Cross Turismo|2023|118500,00|Wire Transfer|Charlotte|NC|Delivered
+25|21/03/2025|911 Targa 4S|2024|158750,00|Leasing|Minneapolis|MN|Delivered
+26|28/03/2025|Panamera|2020|72000,00|Bank Transfer|Philadelphia|PA|Cancelled
+27|09/04/2025|Macan Electric|2025|86500,00|Wire Transfer|San Antonio|TX|Delivered
+29|12/05/2025|Taycan GTS|2023|139000,00|Financing|Raleigh|NC|In Transit
+30|18/06/2025|Cayenne|2021|76800,00|Credit Card|Detroit|MI|Delivered
+35|01/09/2025|Taycan Turbo S|2025|214000,00|Crypto|San Diego|CA|Pending Review
+38|04/10/2025|Macan|2022|67500,00|Financing|Cleveland|OH|Delivered
+40|29/10/2025|Panamera 4S|2024|112000,00|Cash|Kansas City|MO|Delivered
+42|16/11/2025|911 Turbo|2024|198300,00|Wire Transfer|Albuquerque|NM|Awaiting Delivery
+46|22/12/2025|Panamera Turbo|2022|136000,00|Credit Card|Colorado Springs|CO|Delivered
+48|08/01/2026|Cayenne E-Hybrid|2023|92800,00|Leasing|Bakersfield|CA|Delivered
+50|28/01/2026|Taycan Turbo|2025|158500,00|Crypto|Atlanta|GA|Delivered
+53|19/02/2026|Panamera|2020|71500,00|Wire Transfer|Tulsa|OK|Delivered
+55|01/03/2026|Macan Electric|2025|89700,00|Leasing|New Orleans|LA|Delivered
+60|21/04/2026|911 Dakar|2024|268900,00|Credit Card|Riverside|CA|Delivered
+62|05/05/2026|Macan S|2021|66750,00|Cash|St. Louis|MO|Delivered
+64|23/05/2026|Cayenne Turbo GT|2025|200000,00|Bank Transfer|Cincinnati|OH|Delivered
+66|15/06/2026|718 Cayman GT4 RS|2024|176400,00|Credit Card|Plano|TX|Delivered
+69|20/07/2026|Taycan Turbo S|2025|218000,00|Wire Transfer|Lincoln|NE|Pending
+71|08/04/2026|911 Carrera GTS|2024|121750,00|Credit Card|Chandler|AZ|Delivered
+74|09/09/2026|Macan GTS|2024|96800,00|ACH Payment|Durham|NC|Delivered
+76|28/09/2026|Cayenne E-Hybrid|2023|94300,00|Cash|Madison|WI|Delivered
+77|06/10/2026|911 Turbo S|2025|242000,00|Crypto|Lubbock|TX|Awaiting Pickup
+79|29/10/2026|Macan Electric|2026|91300,00|Wire Transfer|Irvine|CA|Delivered
+82|11/12/2026|911 Targa 4S|2023|156500,00|Cash|Chesapeake|VA|Delivered
+85|28/12/2026|911 GT3|2024|224000,00|Wire Transfer|Boise|ID|Awaiting Delivery
+86|15/01/2027|911 Carrera|2024|126900,00|Credit Card|Orlando|FL|Delivered
+88|11/02/2027|Macan S|2022|69800,00|Financing|Tampa|FL|Delivered
+90|05/03/2027|Panamera|2021|81000,00|Cash|Austin|TX|Delivered
+92|02/04/2027|911 Turbo S|2026|249300,00|Wire Transfer|Boston|MA|Awaiting Delivery
+95|12/05/2027|Taycan Turbo|2025|164000,00|ACH Payment|Dallas|TX|In Transit
+96|27/05/2027|Panamera 4S|2024|119000,00|Credit Card|San Francisco|CA|Delivered
+98|18/06/2027|Cayenne E-Hybrid|2023|96800,00|Leasing|Charlotte|NC|Delivered
+100|22/07/2027|Taycan GTS|2025|148500,00|Crypto|Atlanta|GA|Delivered
+103|19/09/2027|Panamera Turbo|2020|137500,00|Wire Transfer|Tulsa|OK|Delivered
+104|25/09/2027|Cayenne Turbo GT|2025|204800,00|Credit Card|Wichita|KS|Pending
+105|01/10/2027|911 Dakar|2024|271700,00|Leasing|New Orleans|LA|Delivered
+`;
+
+const salesData = rawSalesData.trim().split('\n').map(row=>{
+
+    const [
+        id,
+        date,
+        model,
+        year,
+        price,
+        payment,
+        city,
+        state,
+        status
+    ] = row.split('|');
+
+    const [day,month,yearDate] = date.split('/');
+
+    return {
+        id:Number(id),
+        model,
+        year:Number(year),
+        price:parseFloat(price.replace(',','.')),
+        payment,
+        city,
+        state,
+        status,
+        date:`${yearDate}-${month}-${day}`
+    };
+
+});
+
+function currency(v){
+
+    return new Intl.NumberFormat(
+        'en-US',
+        {
+            style:'currency',
+            currency:'USD',
+            maximumFractionDigits:0
+        }
+    ).format(v);
+
+}
+
+function aggregate(data,field,sumField){
+
+    const obj = {};
+
+    data.forEach(d=>{
+
+        if(!obj[d[field]]) obj[d[field]] = 0;
+
+        obj[d[field]] += sumField ? d[sumField] : 1;
+
+    });
+
+    return obj;
+
+}
+
+/*
+========================================================
+FILTROS
+========================================================
+*/
+
+function populateFilters(){
+
+    const map = {
+        modelFilter:'model',
+        stateFilter:'state',
+        cityFilter:'city',
+        yearFilter:'year',
+        statusFilter:'status'
+    };
+
+    for(let id in map){
+
+        const values = [...new Set(salesData.map(d=>d[map[id]]))];
+
+        values.sort().forEach(v=>{
+
+            const option = document.createElement('option');
+
+            option.value = v;
+            option.textContent = v;
+
+            document.getElementById(id).appendChild(option);
+
+        });
+
+    }
+
+}
+
+populateFilters();
+
+function getFilteredData(){
+
+    const model = document.getElementById('modelFilter').value;
+    const state = document.getElementById('stateFilter').value;
+    const city = document.getElementById('cityFilter').value;
+    const year = document.getElementById('yearFilter').value;
+    const status = document.getElementById('statusFilter').value;
+
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+
+    return salesData.filter(d=>{
+
+        const validDate =
+            (!startDate || d.date >= startDate) &&
+            (!endDate || d.date <= endDate);
+
+        return (
+            (model === 'All' || d.model === model) &&
+            (state === 'All' || d.state === state) &&
+            (city === 'All' || d.city === city) &&
+            (year === 'All' || d.year == year) &&
+            (status === 'All' || d.status === status) &&
+            validDate
+        );
+
+    });
+
+}
+
+/*
+========================================================
+CHART OPTIONS
+========================================================
+*/
+
+const chartOptions = {
+
+    responsive:true,
+    maintainAspectRatio:false,
+
+    plugins:{
+        legend:{
+            display:false
+        }
+    },
+
+    scales:{
+
+        x:{
+            ticks:{
+                color:'#777'
+            },
+            grid:{
+                color:'#1c1c1c'
+            }
+        },
+
+        y:{
+            ticks:{
+                color:'#777'
+            },
+            grid:{
+                color:'#1c1c1c'
+            }
+        }
+
+    }
+
+};
+
+let charts = {};
+
+function destroyCharts(){
+
+    Object.values(charts).forEach(c=>c.destroy());
+
+}
+
+/*
+========================================================
+UPDATE DASHBOARD
+========================================================
+*/
+
+function updateDashboard(){
+
+    const data = getFilteredData();
+
+    destroyCharts();
+
+    /*
+    CARDS
+    */
+
+    const sorted = [...data].sort((a,b)=>b.price-a.price);
+
+    document.getElementById('mostExpensive').innerHTML = `
+        ${sorted[0].model}
+        <br>
+        <span style="font-size:18px;color:#999;">
+            ${currency(sorted[0].price)}
+        </span>
+    `;
+
+    document.getElementById('cheapest').innerHTML = `
+        ${sorted[sorted.length-1].model}
+        <br>
+        <span style="font-size:18px;color:#999;">
+            ${currency(sorted[sorted.length-1].price)}
+        </span>
+    `;
+
+    /*
+    MODELOS
+    */
+
+    const modelAgg = aggregate(data,'model','price');
+
+    charts.model = new Chart(
+        document.getElementById('modelChart'),
+        {
+            type:'bar',
+            data:{
+                labels:Object.keys(modelAgg),
+                datasets:[{
+                    data:Object.values(modelAgg),
+                    backgroundColor:'#b12b2b',
+                    borderRadius:8
+                }]
+            },
+            options:chartOptions
+        }
+    );
+
+    const modelSalesCount = {};
+
+    data.forEach(d=>{
+
+        if(!modelSalesCount[d.model]){
+            modelSalesCount[d.model] = 0;
+        }
+
+        modelSalesCount[d.model]++;
+
+    });
+
+    const bestModel = Object.entries(modelAgg)
+    .sort((a,b)=>b[1]-a[1])[0];
+
+    document.getElementById('modelInsight').innerHTML = `
+        <div style="margin-bottom:10px;">
+            Modelo líder:
+            <b>${bestModel[0]}</b>
+        </div>
+
+        <div style="margin-bottom:10px;">
+            Receita:
+            <b>${currency(bestModel[1])}</b>
+        </div>
+
+        <div>
+            Quantidade de vendas:
+            <b>${modelSalesCount[bestModel[0]]}</b>
+        </div>
+    `;
+
+    /*
+    ESTADOS
+    */
+
+    const stateAgg = aggregate(data,'state','price');
+
+    charts.state = new Chart(
+        document.getElementById('stateChart'),
+        {
+            type:'bar',
+            data:{
+                labels:Object.keys(stateAgg),
+                datasets:[{
+                    data:Object.values(stateAgg),
+                    backgroundColor:'#ffffff',
+                    borderRadius:8
+                }]
+            },
+            options:chartOptions
+        }
+    );
+
+    const stateSalesCount = {};
+
+    data.forEach(d=>{
+
+        if(!stateSalesCount[d.state]){
+            stateSalesCount[d.state] = 0;
+        }
+
+        stateSalesCount[d.state]++;
+
+    });
+
+    const bestState = Object.entries(stateAgg)
+    .sort((a,b)=>b[1]-a[1])[0];
+
+    document.getElementById('stateInsight').innerHTML = `
+
+        <div style="margin-bottom:10px;">
+            Estado líder:
+            <b>${bestState[0]}</b>
+        </div>
+
+        <div style="margin-bottom:10px;">
+            Receita:
+            <b>${currency(bestState[1])}</b>
+        </div>
+
+        <div>
+            Quantidade de vendas:
+            <b>${stateSalesCount[bestState[0]]}</b>
+        </div>
+
+    `;
+
+    /*
+    PAGAMENTOS
+    */
+
+    const paymentAgg = aggregate(data,'payment');
+
+    charts.payment = new Chart(
+        document.getElementById('paymentChart'),
+        {
+            type:'bar',
+            data:{
+                labels:Object.keys(paymentAgg),
+                datasets:[{
+                    data:Object.values(paymentAgg),
+                    backgroundColor:'#666',
+                    borderRadius:8
+                }]
+            },
+            options:chartOptions
+        }
+    );
+
+    /*
+    STATUS
+    */
+
+    const statusAgg = aggregate(data,'status');
+
+    charts.status = new Chart(
+        document.getElementById('statusChart'),
+        {
+            type:'doughnut',
+            data:{
+                labels:Object.keys(statusAgg),
+                datasets:[{
+                    data:Object.values(statusAgg),
+                    backgroundColor:[
+                        '#b12b2b',
+                        '#444',
+                        '#666',
+                        '#999',
+                        '#ccc'
+                    ],
+                    borderWidth:0
+                }]
+            },
+            options:{
+                responsive:true,
+                maintainAspectRatio:false,
+                plugins:{
+                    legend:{
+                        position:'bottom',
+                        labels:{
+                            color:'#999'
+                        }
+                    }
+                }
+            }
+        }
+    );
+
+    /*
+    TIME SERIES
+    */
+
+    const monthly = {};
+
+    data.forEach(d=>{
+
+        const month = d.date.substring(0,7);
+
+        if(!monthly[month]) monthly[month] = 0;
+
+        monthly[month] += d.price;
+
+    });
+
+    charts.time = new Chart(
+        document.getElementById('timeChart'),
+        {
+            type:'line',
+            data:{
+                labels:Object.keys(monthly),
+                datasets:[{
+                    data:Object.values(monthly),
+                    borderColor:'#b12b2b',
+                    tension:0.4
+                }]
+            },
+            options:chartOptions
+        }
+    );
+
+}
+
+/*
+========================================================
+EVENTS
+========================================================
+*/
+
+document.querySelectorAll('select,input').forEach(el=>{
+
+    el.addEventListener('change',updateDashboard);
+
+});
+
+updateDashboard();
+
+</script>
+
+</body>
+
+</html>
